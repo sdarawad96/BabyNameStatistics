@@ -48,7 +48,6 @@
             <Font name="System Bold" size="15.0" />
          </font>
       </Label>
-      <ListView fx:id="recordListView" layoutX="260.0" layoutY="73.0" prefHeight="253.0" prefWidth="278.0" />
       <GridPane layoutX="20.0" layoutY="95.0" prefHeight="150.0" prefWidth="212.0">
          <columnConstraints>
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -88,9 +87,10 @@
          <children>
             <Button fx:id="searchButton" mnemonicParsing="false" onAction="#onSearchClick" text="Search" />
             <Button fx:id="addButton" mnemonicParsing="false" onAction="#onAddClick" text="Add" GridPane.columnIndex="1" />
-            <Button fx:id="deletebutton" mnemonicParsing="false" onAction="#onDeleteClick" text="Delete" GridPane.rowIndex="1" />
+            <Button fx:id="deleteButton" mnemonicParsing="false" onAction="#onDeleteClick" text="Delete" GridPane.rowIndex="1" />
             <Button fx:id="deleteAllButton" mnemonicParsing="false" onAction="#onDeleteAllClick" text="Delete All" GridPane.columnIndex="1" GridPane.rowIndex="1" />
          </children>
       </GridPane>
+      <ListView fx:id="recordListView" layoutX="260.0" layoutY="73.0" prefHeight="253.0" prefWidth="278.0" />
    </children>
 </AnchorPane>

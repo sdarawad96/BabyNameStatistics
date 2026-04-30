@@ -15,39 +15,56 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 /**
  * Controller for the Baby Name Statistics application.
- * Handles user actions for the GUI.
+ * Handles opening, saving, searching, adding, deleting, and selecting baby name records.
  */
 public class BabyNameController {
 
-    @FXML private Button addButton;
-    @FXML private Button deleteAllButton;
-    @FXML private Button deleteButton;
-    @FXML private Button searchButton;
+    @FXML
+    private Button addButton;
 
-    @FXML private RadioButton maleRadio;
-    @FXML private RadioButton femaleRadio;
+    @FXML
+    private Button deleteAllButton;
 
-    @FXML private TextField nameField;
-    @FXML private TextField yearField;
-    @FXML private TextField frequencyField;
+    @FXML
+    private Button deleteButton;
 
-    @FXML private ListView<BabyNameRecord> recordListView;
+    @FXML
+    private Button searchButton;
+
+    @FXML
+    private RadioButton maleRadio;
+
+    @FXML
+    private RadioButton femaleRadio;
+
+    @FXML
+    private TextField nameField;
+
+    @FXML
+    private TextField yearField;
+
+    @FXML
+    private TextField frequencyField;
+
+    @FXML
+    private ListView<BabyNameRecord> recordListView;
 
     /**
-     * Group to ensure only one gender radio button is selected.
+     * Group for the gender radio buttons.
      */
     private ToggleGroup genderGroup;
 
     /**
-     * Stores all baby name records loaded into the application.
+     * Stores all records, including records hidden by search.
      */
     private ArrayList<BabyNameRecord> allRecords;
 
     /**
-     * Initializes the controller after the FXML file is loaded.
+     * Initializes the controller after the FXML file loads.
      */
     @FXML
     private void initialize() {
@@ -57,9 +74,22 @@ public class BabyNameController {
         this.maleRadio.setToggleGroup(this.genderGroup);
         this.femaleRadio.setToggleGroup(this.genderGroup);
 
-        this.recordListView.getSelectionModel().selectedItemProperty().addListener(
-                (observable, oldValue, newValue) -> this.displayRecord(newValue)
+        this.nameField.textProperty().addListener((observable, oldValue, newValue) -> this.updateButtonStates());
+        this.yearField.textProperty().addListener((observable, oldValue, newValue) -> this.updateButtonStates());
+        this.frequencyField.textProperty().addListener((observable, oldValue, newValue) -> this.updateButtonStates());
+
+        this.genderGroup.selectedToggleProperty().addListener(
+                (observable, oldValue, newValue) -> this.updateButtonStates()
         );
+
+        this.recordListView.getSelectionModel().selectedItemProperty().addListener(
+                (observable, oldValue, newValue) -> {
+                    this.displayRecord(newValue);
+                    this.updateButtonStates();
+                }
+        );
+
+        this.updateButtonStates();
     }
 
     /**
@@ -85,7 +115,6 @@ public class BabyNameController {
     private void loadDataFromFile(File file) {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             this.allRecords.clear();
-            this.recordListView.getItems().clear();
 
             String line;
             while ((line = reader.readLine()) != null) {
@@ -100,11 +129,17 @@ public class BabyNameController {
                 this.allRecords.add(record);
             }
 
+            this.sortRecords();
             this.showAllRecords();
 
         } catch (Exception error) {
-            this.showError("Open Error", "Could not open file", "There was a problem loading the CSV file.");
+            this.showError("Open Error", "Could not open file",
+                    "There was a problem loading the CSV file.");
+            this.updateButtonStates();
+            return;
         }
+
+        this.updateButtonStates();
     }
 
     /**
@@ -116,6 +151,19 @@ public class BabyNameController {
         for (BabyNameRecord record : this.allRecords) {
             this.recordListView.getItems().add(record);
         }
+    }
+
+    /**
+     * Sorts records by year descending, gender female before male,
+     * frequency descending, and name ascending.
+     */
+    private void sortRecords() {
+        this.allRecords.sort(
+                Comparator.comparingInt(BabyNameRecord::getYear).reversed()
+                        .thenComparing(BabyNameRecord::getGender)
+                        .thenComparing(Comparator.comparingInt(BabyNameRecord::getFrequency).reversed())
+                        .thenComparing(BabyNameRecord::getName)
+        );
     }
 
     /**
@@ -141,18 +189,18 @@ public class BabyNameController {
 
     /**
      * Handles the Search button click.
-     * Shows only records that match the entered values.
+     * Shows exactly the records that match the entered field values.
      */
     @FXML
     private void onSearchClick() {
         String name = this.nameField.getText().trim().toLowerCase();
         String yearText = this.yearField.getText().trim();
         String frequencyText = this.frequencyField.getText().trim();
-        String gender = this.maleRadio.isSelected() ? "M"
-                : this.femaleRadio.isSelected() ? "F" : "";
+        String gender = this.getSelectedGender();
 
         if (!this.isIntegerOrEmpty(yearText) || !this.isIntegerOrEmpty(frequencyText)) {
-            this.showError("Search Error", "Invalid input", "Year and frequency must be whole numbers.");
+            this.showError("Search Error", "Invalid input",
+                    "Year and frequency must be integers.");
             return;
         }
 
@@ -172,10 +220,13 @@ public class BabyNameController {
                 this.recordListView.getItems().add(record);
             }
         }
+
+        this.updateButtonStates();
     }
 
     /**
      * Handles the Add button click.
+     * Adds a record using the form field values.
      */
     @FXML
     private void onAddClick() {
@@ -185,27 +236,33 @@ public class BabyNameController {
 
         if (name.isEmpty() || yearText.isEmpty() || frequencyText.isEmpty()
                 || this.genderGroup.getSelectedToggle() == null) {
-            this.showError("Add Error", "Missing input", "Name, gender, year, and frequency are required.");
+            this.showError("Add Error", "Missing input",
+                    "Name, gender, year, and frequency are required.");
             return;
         }
 
         if (!this.isIntegerOrEmpty(yearText) || !this.isIntegerOrEmpty(frequencyText)) {
-            this.showError("Add Error", "Invalid input", "Year and frequency must be whole numbers.");
+            this.showError("Add Error", "Invalid input",
+                    "Year and frequency must be integers.");
             return;
         }
 
-        String gender = this.maleRadio.isSelected() ? "M" : "F";
+        String gender = this.getSelectedGender();
         int year = Integer.parseInt(yearText);
         int frequency = Integer.parseInt(frequencyText);
 
         BabyNameRecord record = new BabyNameRecord(name, gender, year, frequency);
+
         this.allRecords.add(record);
+        this.sortRecords();
         this.showAllRecords();
         this.recordListView.getSelectionModel().select(record);
+        this.updateButtonStates();
     }
 
     /**
      * Handles the Delete button click.
+     * Deletes the selected record from the application.
      */
     @FXML
     private void onDeleteClick() {
@@ -214,17 +271,22 @@ public class BabyNameController {
         if (selectedRecord != null) {
             this.allRecords.remove(selectedRecord);
             this.recordListView.getItems().remove(selectedRecord);
+            this.clearForm();
         }
+
+        this.updateButtonStates();
     }
 
     /**
      * Handles the Delete All button click.
+     * Deletes all records, including records hidden by search.
      */
     @FXML
     private void onDeleteAllClick() {
         this.allRecords.clear();
         this.recordListView.getItems().clear();
         this.clearForm();
+        this.updateButtonStates();
     }
 
     /**
@@ -250,7 +312,8 @@ public class BabyNameController {
                         + record.getFrequency());
             }
         } catch (Exception error) {
-            this.showError("Save Error", "Could not save file", "There was a problem saving the CSV file.");
+            this.showError("Save Error", "Could not save file",
+                    "There was a problem saving the CSV file.");
         }
     }
 
@@ -260,17 +323,35 @@ public class BabyNameController {
     @FXML
     private void onAboutClick() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("About");
-        alert.setHeaderText("Baby Name Statistics");
-        alert.setContentText("This application manages baby name frequency records.");
+        alert.setTitle("Baby Name Frequency App");
+        alert.setHeaderText("Message");
+        alert.setContentText("This application manages baby name frequency records.\n\n" +
+                "Author: Sondus Darawad");
         alert.showAndWait();
     }
 
     /**
-     * Checks whether text is empty or a valid integer.
+     * Gets the selected gender.
+     *
+     * @return the selected gender, or an empty string if none is selected
+     */
+    private String getSelectedGender() {
+        if (this.maleRadio.isSelected()) {
+            return "M";
+        }
+
+        if (this.femaleRadio.isSelected()) {
+            return "F";
+        }
+
+        return "";
+    }
+
+    /**
+     * Checks whether the text is empty or a valid integer.
      *
      * @param text the text to check
-     * @return true if empty or integer, false otherwise
+     * @return true if the text is empty or an integer
      */
     private boolean isIntegerOrEmpty(String text) {
         if (text.isEmpty()) {
@@ -293,6 +374,25 @@ public class BabyNameController {
         this.yearField.clear();
         this.frequencyField.clear();
         this.genderGroup.selectToggle(null);
+        this.recordListView.getSelectionModel().clearSelection();
+    }
+
+    /**
+     * Updates button states based on the current data and form values.
+     */
+    private void updateButtonStates() {
+        boolean hasRecords = !this.allRecords.isEmpty();
+        boolean hasSelection = this.recordListView.getSelectionModel().getSelectedItem() != null;
+
+        boolean hasName = !this.nameField.getText().trim().isEmpty();
+        boolean hasYear = !this.yearField.getText().trim().isEmpty();
+        boolean hasFrequency = !this.frequencyField.getText().trim().isEmpty();
+        boolean hasGender = this.genderGroup.getSelectedToggle() != null;
+
+        this.searchButton.setDisable(!hasRecords);
+        this.deleteButton.setDisable(!hasSelection);
+        this.deleteAllButton.setDisable(!hasRecords);
+        this.addButton.setDisable(!(hasName && hasYear && hasFrequency && hasGender));
     }
 
     /**
@@ -300,7 +400,7 @@ public class BabyNameController {
      *
      * @param title the alert title
      * @param header the alert header
-     * @param content the alert message
+     * @param content the alert content
      */
     private void showError(String title, String header, String content) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
