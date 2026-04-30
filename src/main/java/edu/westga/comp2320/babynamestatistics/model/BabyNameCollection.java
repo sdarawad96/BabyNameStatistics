@@ -20,7 +20,7 @@ public class BabyNameCollection {
     }
 
     /**
-     * Adds a baby name record to the collection.
+     * Adds a baby name record to the collection
      *
      * @param record the record to add
      * @throws IllegalArgumentException if the record is null or already exists
