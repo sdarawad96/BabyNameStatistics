@@ -175,7 +175,7 @@ public class BabyNameController {
     private void sortRecords() {
         this.allRecords.sort(
                 Comparator.comparingInt(BabyNameRecord::getYear).reversed()
-                        .thenComparing(BabyNameRecord::getGender)
+                        .thenComparing(record -> record.getGender().equals("F") ? 0 : 1)
                         .thenComparing(Comparator.comparingInt(BabyNameRecord::getFrequency).reversed())
                         .thenComparing(BabyNameRecord::getName)
         );
