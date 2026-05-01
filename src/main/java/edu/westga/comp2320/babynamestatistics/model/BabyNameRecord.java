@@ -22,7 +22,7 @@ public class BabyNameRecord {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Name is required.");
         }
-        if (gender == null || (!gender.equals("M") && !gender.equals("F"))) {
+        if (gender == null || (!gender.equalsIgnoreCase("M") && !gender.equalsIgnoreCase("F"))) {
             throw new IllegalArgumentException("Gender must be M or F.");
         }
         if (year < 0) {
@@ -33,7 +33,7 @@ public class BabyNameRecord {
         }
 
         this.name = name.trim();
-        this.gender = gender;
+        this.gender = gender.toUpperCase();
         this.year = year;
         this.frequency = frequency;
     }
@@ -85,9 +85,9 @@ public class BabyNameRecord {
             return false;
         }
 
-        return this.name.equalsIgnoreCase(other.name)
-                && this.gender.equals(other.gender)
-                && this.year == other.year;
+        return this.name.equalsIgnoreCase(other.getName())
+                && this.gender.equals(other.getGender())
+                && this.year == other.getYear();
     }
 
     /**
