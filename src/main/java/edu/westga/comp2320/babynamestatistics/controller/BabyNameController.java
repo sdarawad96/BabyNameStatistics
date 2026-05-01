@@ -2,6 +2,8 @@ package edu.westga.comp2320.babynamestatistics.controller;
 
 import edu.westga.comp2320.babynamestatistics.model.BabyNameRecord;
 import javafx.fxml.FXML;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -10,8 +12,6 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.stage.FileChooser;
-import javafx.scene.chart.BarChart;
-import javafx.scene.chart.XYChart;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -56,9 +56,6 @@ public class BabyNameController {
     @FXML
     private TextField popularYearField;
 
-    //@FXML
-    private Label popularNamesLabel;
-
     @FXML
     private BarChart<String, Number> popularNamesChart;
 
@@ -70,7 +67,6 @@ public class BabyNameController {
 
     @FXML
     private Button nextYearButton;
-
 
     @FXML
     private ListView<BabyNameRecord> recordListView;
@@ -94,7 +90,6 @@ public class BabyNameController {
         this.frequencyField.textProperty().addListener((observable, oldValue, newValue) -> this.updateButtonStates());
 
         this.popularYearField.textProperty().addListener((observable, oldValue, newValue) -> this.validatePopularYear());
-
         this.popularYearField.setOnAction(event -> this.updateMostPopularNames());
 
         this.popularYearField.focusedProperty().addListener((observable, oldValue, newValue) -> {
@@ -162,8 +157,6 @@ public class BabyNameController {
         } catch (Exception error) {
             this.showError("Open Error", "Could not open file",
                     "There was a problem loading the CSV file.");
-            this.updateButtonStates();
-            return;
         }
 
         this.updateButtonStates();
@@ -233,12 +226,9 @@ public class BabyNameController {
         this.recordListView.getItems().clear();
 
         for (BabyNameRecord record : this.allRecords) {
-            boolean matchesName = name.isEmpty()
-                    || record.getName().toLowerCase().contains(name);
-            boolean matchesGender = gender.isEmpty()
-                    || record.getGender().equals(gender);
-            boolean matchesYear = yearText.isEmpty()
-                    || String.valueOf(record.getYear()).equals(yearText);
+            boolean matchesName = name.isEmpty() || record.getName().toLowerCase().contains(name);
+            boolean matchesGender = gender.isEmpty() || record.getGender().equals(gender);
+            boolean matchesYear = yearText.isEmpty() || String.valueOf(record.getYear()).equals(yearText);
             boolean matchesFrequency = frequencyText.isEmpty()
                     || String.valueOf(record.getFrequency()).equals(frequencyText);
 
@@ -367,12 +357,13 @@ public class BabyNameController {
     private void validatePopularYear() {
         String yearText = this.popularYearField.getText().trim();
 
-        if (yearText.isEmpty() || this.isIntegerOrEmpty(yearText)) {
+        if (yearText.isEmpty() || this.isNonNegativeIntegerOrEmpty(yearText)) {
             this.popularYearErrorLabel.setText("");
         } else {
             this.popularYearErrorLabel.setText("Enter a valid Year");
         }
     }
+
     /**
      * Handles the previous year button click.
      */
@@ -397,7 +388,6 @@ public class BabyNameController {
     private void changePopularYearBy(int amount) {
         String yearText = this.popularYearField.getText().trim();
 
-        // FIX: handle empty or invalid input
         if (yearText.isEmpty() || !this.isNonNegativeIntegerOrEmpty(yearText)) {
             this.popularYearField.setText("0");
         } else {
@@ -587,6 +577,7 @@ public class BabyNameController {
 
         return false;
     }
+
     /**
      * Checks whether the given text is empty or represents a non-negative integer.
      *
