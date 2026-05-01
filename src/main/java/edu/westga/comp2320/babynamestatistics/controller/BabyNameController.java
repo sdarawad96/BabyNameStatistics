@@ -251,6 +251,12 @@ public class BabyNameController {
         int year = Integer.parseInt(yearText);
         int frequency = Integer.parseInt(frequencyText);
 
+        if(this.hasDuplicateRecord(name, gender, year)) {
+            this.showError("add Error", "Duplicate record",
+                    "A record with the same name, gender, and year already exist.");
+            return;
+        }
+
         BabyNameRecord record = new BabyNameRecord(name, gender, year, frequency);
 
         this.allRecords.add(record);
@@ -408,5 +414,26 @@ public class BabyNameController {
         alert.setHeaderText(header);
         alert.setContentText(content);
         alert.showAndWait();
+    }
+    /**
+     * Checks whether a record with the same name, gender, and year already exists.
+     *
+     * @param name the name to check
+     * @param gender the gender to check
+     * @param year the year to check
+     * @return true if a duplicate record exists
+     */
+    private boolean hasDuplicateRecord(String name, String gender, int year) {
+        for (BabyNameRecord record : this.allRecords) {
+            boolean sameName = record.getName().equalsIgnoreCase(name);
+            boolean sameGender = record.getGender().equals(gender);
+            boolean sameYear = record.getYear() == year;
+
+            if (sameName && sameGender && sameYear) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
