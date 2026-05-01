@@ -10,6 +10,8 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.stage.FileChooser;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.XYChart;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -54,8 +56,11 @@ public class BabyNameController {
     @FXML
     private TextField popularYearField;
 
-    @FXML
+    //@FXML
     private Label popularNamesLabel;
+
+    @FXML
+    private BarChart<String, Number> popularNamesChart;
 
     @FXML
     private Label popularYearErrorLabel;
@@ -410,20 +415,22 @@ public class BabyNameController {
     }
 
     /**
-     * Updates the most popular names display for the entered year.
+     * Updates the most popular names chart for the entered year.
      */
     private void updateMostPopularNames() {
         String yearText = this.popularYearField.getText().trim();
 
-        this.popularNamesLabel.setText("");
+        this.popularNamesChart.getData().clear();
 
         if (yearText.isEmpty()) {
             this.popularYearErrorLabel.setText("");
+            this.popularNamesChart.setTitle("");
             return;
         }
 
-        if (!this.isIntegerOrEmpty(yearText)) {
+        if (!this.isNonNegativeIntegerOrEmpty(yearText)) {
             this.popularYearErrorLabel.setText("Enter a valid Year");
+            this.popularNamesChart.setTitle("");
             return;
         }
 
@@ -445,44 +452,37 @@ public class BabyNameController {
         femaleRecords.sort(Comparator.comparingInt(BabyNameRecord::getFrequency).reversed());
         maleRecords.sort(Comparator.comparingInt(BabyNameRecord::getFrequency).reversed());
 
-        StringBuilder result = new StringBuilder();
+        XYChart.Series<String, Number> femaleSeries = new XYChart.Series<>();
+        femaleSeries.setName("Top three female names");
 
-        this.appendTopThreeNames(result, femaleRecords, "female", year);
-        result.append("\n\n");
-        this.appendTopThreeNames(result, maleRecords, "male", year);
+        XYChart.Series<String, Number> maleSeries = new XYChart.Series<>();
+        maleSeries.setName("Top three male names");
 
-        this.popularNamesLabel.setText(result.toString());
+        this.addTopThreeToSeries(femaleSeries, femaleRecords);
+        this.addTopThreeToSeries(maleSeries, maleRecords);
+
+        this.popularNamesChart.setTitle("Frequencies in year " + year);
+        this.popularNamesChart.getData().add(femaleSeries);
+        this.popularNamesChart.getData().add(maleSeries);
     }
 
     /**
-     * Appends up to three names to the result.
+     * Adds up to three records to a chart series.
      *
-     * @param result the text result
-     * @param records the records to use
-     * @param genderName the gender name
-     * @param year the selected year
+     * @param series the chart series
+     * @param records the records to add
      */
-    private void appendTopThreeNames(StringBuilder result, ArrayList<BabyNameRecord> records,
-                                     String genderName, int year) {
-        if (records.isEmpty()) {
-            result.append("No ").append(genderName)
-                    .append(" names available for ").append(year);
-            return;
-        }
+    private void addTopThreeToSeries(XYChart.Series<String, Number> series,
+                                     ArrayList<BabyNameRecord> records) {
+        int amountToAdd = Math.min(3, records.size());
 
-        result.append("Most popular ").append(genderName).append(" names:\n");
-
-        for (int index = 0; index < Math.min(3, records.size()); index++) {
+        for (int index = 0; index < amountToAdd; index++) {
             BabyNameRecord record = records.get(index);
 
-            result.append(record.getName())
-                    .append(" (")
-                    .append(record.getFrequency())
-                    .append(")");
-
-            if (index < Math.min(3, records.size()) - 1) {
-                result.append("\n");
-            }
+            series.getData().add(new XYChart.Data<>(
+                    record.getName(),
+                    record.getFrequency()
+            ));
         }
     }
 

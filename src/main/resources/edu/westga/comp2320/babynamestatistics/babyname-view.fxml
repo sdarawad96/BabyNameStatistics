@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
@@ -16,7 +19,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="581.0" prefWidth="567.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.westga.comp2320.babynamestatistics.controller.BabyNameController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="655.0" prefWidth="673.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.westga.comp2320.babynamestatistics.controller.BabyNameController">
    <children>
       <MenuBar layoutX="-6.0" layoutY="2.0" prefWidth="106.0">
         <menus>
@@ -96,6 +99,9 @@
          <font>
             <Font size="20.0" />
          </font>
+         <graphic>
+            <Label fx:id="popularNamesLabel" prefHeight="6.0" prefWidth="0.0" />
+         </graphic>
       </Label>
       <Label layoutX="260.0" layoutY="341.0" text="Enter a year:">
          <font>
@@ -103,9 +109,16 @@
          </font>
       </Label>
       <TextField fx:id="popularYearField" layoutX="379.0" layoutY="339.0" prefHeight="25.0" prefWidth="76.0" />
-      <Label fx:id="popularNamesLabel" layoutX="98.0" layoutY="371.0" prefHeight="203.0" prefWidth="242.0" />
       <Label fx:id="popularYearErrorLabel" layoutX="396.0" layoutY="363.0" prefHeight="17.0" prefWidth="0.0" textFill="#ee0909" />
       <Button fx:id="previousYearButton" layoutX="356.0" layoutY="339.0" mnemonicParsing="false" onAction="#onPreviousYearClick" text="&lt;" />
       <Button fx:id="nextYearButton" layoutX="449.0" layoutY="339.0" mnemonicParsing="false" onAction="#onNextYearClick" text="&gt;" />
+      <BarChart fx:id="popularNamesChart" layoutX="65.0" layoutY="367.0" prefHeight="288.0" prefWidth="503.0">
+        <xAxis>
+          <CategoryAxis side="BOTTOM" label="Name" animated="false" />
+        </xAxis>
+        <yAxis>
+          <NumberAxis side="LEFT" label="Frequency" />
+        </yAxis>
+      </BarChart>
    </children>
 </AnchorPane>
