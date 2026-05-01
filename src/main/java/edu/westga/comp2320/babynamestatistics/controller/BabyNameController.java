@@ -61,6 +61,13 @@ public class BabyNameController {
     private Label popularYearErrorLabel;
 
     @FXML
+    private Button previousYearButton;
+
+    @FXML
+    private Button nextYearButton;
+
+
+    @FXML
     private ListView<BabyNameRecord> recordListView;
 
     private ToggleGroup genderGroup;
@@ -361,6 +368,46 @@ public class BabyNameController {
             this.popularYearErrorLabel.setText("Enter a valid Year");
         }
     }
+    /**
+     * Handles the previous year button click.
+     */
+    @FXML
+    private void onPreviousYearClick() {
+        this.changePopularYearBy(-1);
+    }
+
+    /**
+     * Handles the next year button click.
+     */
+    @FXML
+    private void onNextYearClick() {
+        this.changePopularYearBy(1);
+    }
+
+    /**
+     * Changes the popular year field by the specified amount.
+     *
+     * @param amount the amount to change the year by
+     */
+    private void changePopularYearBy(int amount) {
+        String yearText = this.popularYearField.getText().trim();
+
+        // FIX: handle empty or invalid input
+        if (yearText.isEmpty() || !this.isNonNegativeIntegerOrEmpty(yearText)) {
+            this.popularYearField.setText("0");
+        } else {
+            int year = Integer.parseInt(yearText);
+            int newYear = year + amount;
+
+            if (newYear < 0) {
+                newYear = 0;
+            }
+
+            this.popularYearField.setText(String.valueOf(newYear));
+        }
+
+        this.updateMostPopularNames();
+    }
 
     /**
      * Updates the most popular names display for the entered year.
@@ -539,5 +586,22 @@ public class BabyNameController {
         }
 
         return false;
+    }
+    /**
+     * Checks whether the given text is empty or represents a non-negative integer.
+     *
+     * @param text the text to check
+     * @return true if the text is empty or a valid non-negative integer; false otherwise
+     */
+    private boolean isNonNegativeIntegerOrEmpty(String text) {
+        if (text.isEmpty()) {
+            return true;
+        }
+
+        try {
+            return Integer.parseInt(text) >= 0;
+        } catch (NumberFormatException error) {
+            return false;
+        }
     }
 }
