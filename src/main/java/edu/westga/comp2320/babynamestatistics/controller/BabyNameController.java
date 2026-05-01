@@ -4,6 +4,7 @@ import edu.westga.comp2320.babynamestatistics.model.BabyNameRecord;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
@@ -19,7 +20,7 @@ import java.util.Comparator;
 
 /**
  * Controller for the Baby Name Statistics application.
- * Handles opening, saving, searching, adding, deleting, and selecting baby name records.
+ * Handles opening, saving, searching, adding, deleting, selecting, and displaying baby name records.
  */
 public class BabyNameController {
 
@@ -51,16 +52,18 @@ public class BabyNameController {
     private TextField frequencyField;
 
     @FXML
+    private TextField popularYearField;
+
+    @FXML
+    private Label popularNamesLabel;
+
+    @FXML
+    private Label popularYearErrorLabel;
+
+    @FXML
     private ListView<BabyNameRecord> recordListView;
 
-    /**
-     * Group for the gender radio buttons.
-     */
     private ToggleGroup genderGroup;
-
-    /**
-     * Stores all records, including records hidden by search.
-     */
     private ArrayList<BabyNameRecord> allRecords;
 
     /**
@@ -78,6 +81,16 @@ public class BabyNameController {
         this.yearField.textProperty().addListener((observable, oldValue, newValue) -> this.updateButtonStates());
         this.frequencyField.textProperty().addListener((observable, oldValue, newValue) -> this.updateButtonStates());
 
+        this.popularYearField.textProperty().addListener((observable, oldValue, newValue) -> this.validatePopularYear());
+
+        this.popularYearField.setOnAction(event -> this.updateMostPopularNames());
+
+        this.popularYearField.focusedProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue) {
+                this.updateMostPopularNames();
+            }
+        });
+
         this.genderGroup.selectedToggleProperty().addListener(
                 (observable, oldValue, newValue) -> this.updateButtonStates()
         );
@@ -90,6 +103,7 @@ public class BabyNameController {
         );
 
         this.updateButtonStates();
+        this.updateMostPopularNames();
     }
 
     /**
@@ -131,6 +145,7 @@ public class BabyNameController {
 
             this.sortRecords();
             this.showAllRecords();
+            this.updateMostPopularNames();
 
         } catch (Exception error) {
             this.showError("Open Error", "Could not open file",
@@ -189,7 +204,6 @@ public class BabyNameController {
 
     /**
      * Handles the Search button click.
-     * Shows exactly the records that match the entered field values.
      */
     @FXML
     private void onSearchClick() {
@@ -226,7 +240,6 @@ public class BabyNameController {
 
     /**
      * Handles the Add button click.
-     * Adds a record using the form field values.
      */
     @FXML
     private void onAddClick() {
@@ -251,9 +264,9 @@ public class BabyNameController {
         int year = Integer.parseInt(yearText);
         int frequency = Integer.parseInt(frequencyText);
 
-        if(this.hasDuplicateRecord(name, gender, year)) {
-            this.showError("add Error", "Duplicate record",
-                    "A record with the same name, gender, and year already exist.");
+        if (this.hasDuplicateRecord(name, gender, year)) {
+            this.showError("Add Error", "Duplicate record",
+                    "A record with the same name, gender, and year already exists.");
             return;
         }
 
@@ -263,12 +276,12 @@ public class BabyNameController {
         this.sortRecords();
         this.showAllRecords();
         this.recordListView.getSelectionModel().select(record);
+        this.updateMostPopularNames();
         this.updateButtonStates();
     }
 
     /**
      * Handles the Delete button click.
-     * Deletes the selected record from the application.
      */
     @FXML
     private void onDeleteClick() {
@@ -280,24 +293,24 @@ public class BabyNameController {
             this.clearForm();
         }
 
+        this.updateMostPopularNames();
         this.updateButtonStates();
     }
 
     /**
      * Handles the Delete All button click.
-     * Deletes all records, including records hidden by search.
      */
     @FXML
     private void onDeleteAllClick() {
         this.allRecords.clear();
         this.recordListView.getItems().clear();
         this.clearForm();
+        this.updateMostPopularNames();
         this.updateButtonStates();
     }
 
     /**
      * Handles the Save menu item click.
-     * Saves all current records to a CSV file.
      */
     @FXML
     private void onSaveClick() {
@@ -331,9 +344,99 @@ public class BabyNameController {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Baby Name Frequency App");
         alert.setHeaderText("Message");
-        alert.setContentText("This application manages baby name frequency records.\n\n" +
-                "Author: Sondus Darawad");
+        alert.setContentText("This application manages baby name frequency records.\n\n"
+                + "Author: Sondus Darawad");
         alert.showAndWait();
+    }
+
+    /**
+     * Validates the popular year field while the user types.
+     */
+    private void validatePopularYear() {
+        String yearText = this.popularYearField.getText().trim();
+
+        if (yearText.isEmpty() || this.isIntegerOrEmpty(yearText)) {
+            this.popularYearErrorLabel.setText("");
+        } else {
+            this.popularYearErrorLabel.setText("Enter a valid Year");
+        }
+    }
+
+    /**
+     * Updates the most popular names display for the entered year.
+     */
+    private void updateMostPopularNames() {
+        String yearText = this.popularYearField.getText().trim();
+
+        this.popularNamesLabel.setText("");
+
+        if (yearText.isEmpty()) {
+            this.popularYearErrorLabel.setText("");
+            return;
+        }
+
+        if (!this.isIntegerOrEmpty(yearText)) {
+            this.popularYearErrorLabel.setText("Enter a valid Year");
+            return;
+        }
+
+        this.popularYearErrorLabel.setText("");
+
+        int year = Integer.parseInt(yearText);
+
+        ArrayList<BabyNameRecord> femaleRecords = new ArrayList<>();
+        ArrayList<BabyNameRecord> maleRecords = new ArrayList<>();
+
+        for (BabyNameRecord record : this.allRecords) {
+            if (record.getYear() == year && record.getGender().equals("F")) {
+                femaleRecords.add(record);
+            } else if (record.getYear() == year && record.getGender().equals("M")) {
+                maleRecords.add(record);
+            }
+        }
+
+        femaleRecords.sort(Comparator.comparingInt(BabyNameRecord::getFrequency).reversed());
+        maleRecords.sort(Comparator.comparingInt(BabyNameRecord::getFrequency).reversed());
+
+        StringBuilder result = new StringBuilder();
+
+        this.appendTopThreeNames(result, femaleRecords, "female", year);
+        result.append("\n\n");
+        this.appendTopThreeNames(result, maleRecords, "male", year);
+
+        this.popularNamesLabel.setText(result.toString());
+    }
+
+    /**
+     * Appends up to three names to the result.
+     *
+     * @param result the text result
+     * @param records the records to use
+     * @param genderName the gender name
+     * @param year the selected year
+     */
+    private void appendTopThreeNames(StringBuilder result, ArrayList<BabyNameRecord> records,
+                                     String genderName, int year) {
+        if (records.isEmpty()) {
+            result.append("No ").append(genderName)
+                    .append(" names available for ").append(year);
+            return;
+        }
+
+        result.append("Most popular ").append(genderName).append(" names:\n");
+
+        for (int index = 0; index < Math.min(3, records.size()); index++) {
+            BabyNameRecord record = records.get(index);
+
+            result.append(record.getName())
+                    .append(" (")
+                    .append(record.getFrequency())
+                    .append(")");
+
+            if (index < Math.min(3, records.size()) - 1) {
+                result.append("\n");
+            }
+        }
     }
 
     /**
@@ -415,6 +518,7 @@ public class BabyNameController {
         alert.setContentText(content);
         alert.showAndWait();
     }
+
     /**
      * Checks whether a record with the same name, gender, and year already exists.
      *
