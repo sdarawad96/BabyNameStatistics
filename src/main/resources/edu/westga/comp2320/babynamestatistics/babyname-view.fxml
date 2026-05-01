@@ -19,7 +19,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="655.0" prefWidth="673.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.westga.comp2320.babynamestatistics.controller.BabyNameController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="655.0" prefWidth="645.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.westga.comp2320.babynamestatistics.controller.BabyNameController">
    <children>
       <MenuBar layoutX="-6.0" layoutY="2.0" prefWidth="106.0">
         <menus>
@@ -114,10 +114,10 @@
       <Button fx:id="nextYearButton" layoutX="449.0" layoutY="339.0" mnemonicParsing="false" onAction="#onNextYearClick" text="&gt;" />
       <BarChart fx:id="popularNamesChart" layoutX="65.0" layoutY="367.0" prefHeight="288.0" prefWidth="503.0">
         <xAxis>
-          <CategoryAxis side="BOTTOM" label="Name" animated="false" />
+          <CategoryAxis animated="false" label="Name" side="BOTTOM" />
         </xAxis>
         <yAxis>
-          <NumberAxis side="LEFT" label="Frequency" />
+          <NumberAxis label="Frequency" side="LEFT" />
         </yAxis>
       </BarChart>
    </children>
