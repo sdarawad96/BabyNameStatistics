@@ -26,6 +26,11 @@ import java.util.Comparator;
  */
 public class BabyNameController {
 
+    private static final int NUMBER_OF_POPULAR_NAMES = 3;
+    private static final int MINIMUM_YEAR = 0;
+    private static final String FEMALE_GENDER = "F";
+    private static final String MALE_GENDER = "M";
+
     @FXML
     private Button addButton;
 
@@ -61,12 +66,6 @@ public class BabyNameController {
 
     @FXML
     private Label popularYearErrorLabel;
-
-    @FXML
-    private Button previousYearButton;
-
-    @FXML
-    private Button nextYearButton;
 
     @FXML
     private ListView<BabyNameRecord> recordListView;
@@ -146,8 +145,7 @@ public class BabyNameController {
                 int year = Integer.parseInt(parts[2]);
                 int frequency = Integer.parseInt(parts[3]);
 
-                BabyNameRecord record = new BabyNameRecord(name, gender, year, frequency);
-                this.allRecords.add(record);
+                this.allRecords.add(new BabyNameRecord(name, gender, year, frequency));
             }
 
             this.sortRecords();
@@ -180,7 +178,7 @@ public class BabyNameController {
     private void sortRecords() {
         this.allRecords.sort(
                 Comparator.comparingInt(BabyNameRecord::getYear).reversed()
-                        .thenComparing(record -> record.getGender().equals("F") ? 0 : 1)
+                        .thenComparing(record -> record.getGender().equals(FEMALE_GENDER) ? 0 : 1)
                         .thenComparing(Comparator.comparingInt(BabyNameRecord::getFrequency).reversed())
                         .thenComparing(BabyNameRecord::getName)
         );
@@ -200,7 +198,7 @@ public class BabyNameController {
         this.yearField.setText(String.valueOf(record.getYear()));
         this.frequencyField.setText(String.valueOf(record.getFrequency()));
 
-        if (record.getGender().equals("M")) {
+        if (record.getGender().equals(MALE_GENDER)) {
             this.maleRadio.setSelected(true);
         } else {
             this.femaleRadio.setSelected(true);
@@ -249,16 +247,15 @@ public class BabyNameController {
         String yearText = this.yearField.getText().trim();
         String frequencyText = this.frequencyField.getText().trim();
 
-        if (name.isEmpty() || yearText.isEmpty() || frequencyText.isEmpty()
-                || this.genderGroup.getSelectedToggle() == null) {
+        if (this.isMissingAddInput(name, yearText, frequencyText)) {
             this.showError("Add Error", "Missing input",
                     "Name, gender, year, and frequency are required.");
             return;
         }
 
-        if (!this.isIntegerOrEmpty(yearText) || !this.isIntegerOrEmpty(frequencyText)) {
+        if (!this.isNonNegativeIntegerOrEmpty(yearText) || !this.isNonNegativeIntegerOrEmpty(frequencyText)) {
             this.showError("Add Error", "Invalid input",
-                    "Year and frequency must be integers.");
+                    "Year and frequency must be non-negative integers.");
             return;
         }
 
@@ -280,6 +277,21 @@ public class BabyNameController {
         this.recordListView.getSelectionModel().select(record);
         this.updateMostPopularNames();
         this.updateButtonStates();
+    }
+
+    /**
+     * Checks whether the Add form is missing required input.
+     *
+     * @param name the name text
+     * @param yearText the year text
+     * @param frequencyText the frequency text
+     * @return true if required input is missing
+     */
+    private boolean isMissingAddInput(String name, String yearText, String frequencyText) {
+        return name.isEmpty()
+                || yearText.isEmpty()
+                || frequencyText.isEmpty()
+                || this.genderGroup.getSelectedToggle() == null;
     }
 
     /**
@@ -389,13 +401,13 @@ public class BabyNameController {
         String yearText = this.popularYearField.getText().trim();
 
         if (yearText.isEmpty() || !this.isNonNegativeIntegerOrEmpty(yearText)) {
-            this.popularYearField.setText("0");
+            this.popularYearField.setText(String.valueOf(MINIMUM_YEAR));
         } else {
             int year = Integer.parseInt(yearText);
             int newYear = year + amount;
 
-            if (newYear < 0) {
-                newYear = 0;
+            if (newYear < MINIMUM_YEAR) {
+                newYear = MINIMUM_YEAR;
             }
 
             this.popularYearField.setText(String.valueOf(newYear));
@@ -428,28 +440,14 @@ public class BabyNameController {
 
         int year = Integer.parseInt(yearText);
 
-        ArrayList<BabyNameRecord> femaleRecords = new ArrayList<>();
-        ArrayList<BabyNameRecord> maleRecords = new ArrayList<>();
+        ArrayList<BabyNameRecord> femaleRecords = this.getRecordsForYearAndGender(year, FEMALE_GENDER);
+        ArrayList<BabyNameRecord> maleRecords = this.getRecordsForYearAndGender(year, MALE_GENDER);
 
-        for (BabyNameRecord record : this.allRecords) {
-            if (record.getYear() == year && record.getGender().equals("F")) {
-                femaleRecords.add(record);
-            } else if (record.getYear() == year && record.getGender().equals("M")) {
-                maleRecords.add(record);
-            }
-        }
+        this.sortRecordsByFrequency(femaleRecords);
+        this.sortRecordsByFrequency(maleRecords);
 
-        femaleRecords.sort(Comparator.comparingInt(BabyNameRecord::getFrequency).reversed());
-        maleRecords.sort(Comparator.comparingInt(BabyNameRecord::getFrequency).reversed());
-
-        XYChart.Series<String, Number> femaleSeries = new XYChart.Series<>();
-        femaleSeries.setName("Top three female names");
-
-        XYChart.Series<String, Number> maleSeries = new XYChart.Series<>();
-        maleSeries.setName("Top three male names");
-
-        this.addTopThreeToSeries(femaleSeries, femaleRecords);
-        this.addTopThreeToSeries(maleSeries, maleRecords);
+        XYChart.Series<String, Number> femaleSeries = this.createSeries("Top three female names", femaleRecords);
+        XYChart.Series<String, Number> maleSeries = this.createSeries("Top three male names", maleRecords);
 
         this.popularNamesChart.setTitle("Frequencies in year " + year);
         this.popularNamesChart.getData().add(femaleSeries);
@@ -457,14 +455,45 @@ public class BabyNameController {
     }
 
     /**
-     * Adds up to three records to a chart series.
+     * Gets records for a specific year and gender.
      *
-     * @param series the chart series
-     * @param records the records to add
+     * @param year the year to match
+     * @param gender the gender to match
+     * @return the matching records
      */
-    private void addTopThreeToSeries(XYChart.Series<String, Number> series,
-                                     ArrayList<BabyNameRecord> records) {
-        int amountToAdd = Math.min(3, records.size());
+    private ArrayList<BabyNameRecord> getRecordsForYearAndGender(int year, String gender) {
+        ArrayList<BabyNameRecord> matchingRecords = new ArrayList<>();
+
+        for (BabyNameRecord record : this.allRecords) {
+            if (record.getYear() == year && record.getGender().equals(gender)) {
+                matchingRecords.add(record);
+            }
+        }
+
+        return matchingRecords;
+    }
+
+    /**
+     * Sorts records by frequency in descending order.
+     *
+     * @param records the records to sort
+     */
+    private void sortRecordsByFrequency(ArrayList<BabyNameRecord> records) {
+        records.sort(Comparator.comparingInt(BabyNameRecord::getFrequency).reversed());
+    }
+
+    /**
+     * Creates a chart series using up to the top three records.
+     *
+     * @param seriesName the series name
+     * @param records the records to add
+     * @return the created chart series
+     */
+    private XYChart.Series<String, Number> createSeries(String seriesName, ArrayList<BabyNameRecord> records) {
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName(seriesName);
+
+        int amountToAdd = Math.min(NUMBER_OF_POPULAR_NAMES, records.size());
 
         for (int index = 0; index < amountToAdd; index++) {
             BabyNameRecord record = records.get(index);
@@ -474,6 +503,8 @@ public class BabyNameController {
                     record.getFrequency()
             ));
         }
+
+        return series;
     }
 
     /**
@@ -483,11 +514,11 @@ public class BabyNameController {
      */
     private String getSelectedGender() {
         if (this.maleRadio.isSelected()) {
-            return "M";
+            return MALE_GENDER;
         }
 
         if (this.femaleRadio.isSelected()) {
-            return "F";
+            return FEMALE_GENDER;
         }
 
         return "";
@@ -590,7 +621,7 @@ public class BabyNameController {
         }
 
         try {
-            return Integer.parseInt(text) >= 0;
+            return Integer.parseInt(text) >= MINIMUM_YEAR;
         } catch (NumberFormatException error) {
             return false;
         }
